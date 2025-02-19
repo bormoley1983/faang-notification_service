@@ -11,6 +11,8 @@ import org.springframework.context.MessageSource;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+import java.util.Locale;
+
 @Slf4j
 @RequiredArgsConstructor
 @Component
@@ -30,7 +32,7 @@ public class LikeEventListener implements EventListener<NotificationLikeEvent> {
         String message = messageSource.getMessage(
                 "like.notification",
                 new Object[]{event.getUserId(), event.getPostId()},
-                null
+                Locale.ENGLISH
         );
 
         notificationServiceHandler.sendNotification(user, message);
