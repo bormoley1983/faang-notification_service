@@ -26,6 +26,11 @@ dependencies {
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
     /**
+     * Kafka
+     */
+    implementation("org.springframework.kafka:spring-kafka:3.3.2")
+
+    /**
      * Database
      */
     implementation("redis.clients:jedis:4.3.2")
@@ -42,6 +47,11 @@ dependencies {
     implementation("org.mapstruct:mapstruct:1.5.3.Final")
     annotationProcessor("org.mapstruct:mapstruct-processor:1.5.3.Final")
     implementation("com.vonage:client:7.3.0")
+
+    /**
+     * Telegram bot
+     */
+    implementation("org.telegram:telegrambots-spring-boot-starter:6.9.7.1")
 
     /**
      * Test containers
