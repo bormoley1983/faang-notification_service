@@ -6,6 +6,8 @@ spring:
     topics:
       like-topic:
         name: notifications_like_topic
+      notifications-comment-topic:
+        name: notifications_comment_topic
 
   data:
     redis:
