@@ -23,6 +23,9 @@ spring:
           timeout: 5000
           writetimeout: 5000
 
+  messages:
+    basename: messages
+
   kafka:
     bootstrap-servers: localhost:9092
     consumer:

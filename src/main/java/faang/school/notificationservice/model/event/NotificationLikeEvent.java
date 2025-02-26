@@ -9,4 +9,5 @@ public class NotificationLikeEvent implements Event {
     private Long postId;
     private Long userId;
     private Long authorId;
+    private Long postAuthorId;
 }

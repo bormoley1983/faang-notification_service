@@ -36,7 +36,7 @@ public abstract class AbstractEventListener<T extends Event> {
                 null
         );
         log.info("User had message configuration {}", message);
-        sendNotification(user, message);
+        sendNotification(reciever, message);
     }
 
     protected void sendNotification(UserDto user, String message) {

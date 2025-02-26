@@ -32,7 +32,7 @@ public class LikeEventListener extends AbstractEventListener<NotificationLikeEve
 
     @Override
     protected Object[] getMessageArgs(NotificationLikeEvent event, UserDto user) {
-        return new Object[] {event.getUserId(), event.getPostId()};
+        return new Object[]{event.getUserId(), event.getPostId()};
     }
 
     @Override
@@ -53,6 +53,7 @@ public class LikeEventListener extends AbstractEventListener<NotificationLikeEve
             processEvent(likeEvent);
         } catch (JsonProcessingException e) {
             log.error("Error parsing JSON: {}", event);
-            throw new RuntimeException(e);        }
+            throw new RuntimeException(e);
+        }
     }
 }

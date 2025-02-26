@@ -29,7 +29,6 @@ public class CommentEventListener extends AbstractEventListener<NotificationComm
     @Override
     protected String getMessageKey() {
         return "comment.notification";
-        // return "comment.new";
     }
 
     @Override
@@ -47,7 +46,7 @@ public class CommentEventListener extends AbstractEventListener<NotificationComm
         return event.getAuthorId();
     }
 
-    @KafkaListener(topics = "${spring.kafka.topics.notifications-comment-topic.name}", groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(topics = "${spring.kafka.topics.comment-topic.name}", groupId = "${spring.kafka.consumer.group-id}")
     public void onMessage(String event) {
         try {
             NotificationCommentEvent commentEvent = objectMapper.readValue(event, NotificationCommentEvent.class);
