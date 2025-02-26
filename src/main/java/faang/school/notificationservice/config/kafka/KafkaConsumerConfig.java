@@ -1,6 +1,5 @@
 package faang.school.notificationservice.config.kafka;
 
-
 import faang.school.notificationservice.model.event.Event;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;

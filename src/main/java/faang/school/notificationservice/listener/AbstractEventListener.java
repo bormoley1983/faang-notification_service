@@ -20,37 +20,39 @@ public abstract class AbstractEventListener<T extends Event> {
     protected abstract String getMessageKey();
 
     protected abstract Object[] getMessageArgs(T event, UserDto user);
-
-    protected abstract Long getAuthorId(T event);
+    protected abstract Long getRecieverId(T event);
+    protected abstract Long getSenderId(T event);
 
     public void processEvent(T event) {
         log.info("Processing event: {}", event);
-        Long authorId = getAuthorId(event);
-        UserDto user = userServiceClient.getUser(authorId);
+        Long recieverId = getRecieverId(event);
+        Long senderId = getSenderId(event);
+        UserDto reciever = userServiceClient.getUser(recieverId);
+        UserDto sender = userServiceClient.getUser(senderId);
 
         String message = messageSource.getMessage(
                 getMessageKey(),
-                getMessageArgs(event, user),
+                getMessageArgs(event, sender),
                 null
         );
         log.info("User had message configuration {}", message);
         sendNotification(user, message);
     }
 
-    protected void sendNotification(UserDto userDto, String message) {
+    protected void sendNotification(UserDto user, String message) {
         log.info("Attempting to send notification to user: {} with preferred notification means: {}",
-                userDto.getId(), userDto.getPreference());
+                user.getId(), user.getPreference());
 
         NotificationService notificationService = notificationServices.stream()
-                .filter(service -> service.getPreferredContact() == userDto.getPreference())
+                .filter(service -> service.getPreferredContact() == user.getPreference())
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(String.format("No suitable notificationService found " +
-                        "for user with id = %d, preference = %s", userDto.getId(), userDto.getPreference())));
+                        "for user with id = %d, preference = %s", user.getId(), user.getPreference())));
 
-        log.info("Sending notification for userId={}, chatId={}", userDto.getTelegramUsername(),
-                userDto.getTelegramChatId());
-        notificationService.send(userDto, message);
-        log.info("Notification sent to user: {}, id = {} via {}", userDto.getUsername(), userDto.getId(),
-                userDto.getPreference());
+        log.info("Sending notification for userId={}, chatId={}", user.getTelegramUsername(),
+                user.getTelegramChatId());
+        notificationService.send(user, message);
+        log.info("Notification sent to user: {}, id = {} via {}", user.getUsername(), user.getId(),
+                user.getPreference());
     }
 }

@@ -1,5 +1,6 @@
 package faang.school.notificationservice.listener;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import faang.school.notificationservice.client.UserServiceClient;
 import faang.school.notificationservice.model.dto.UserDto;
@@ -28,26 +29,33 @@ public class CommentEventListener extends AbstractEventListener<NotificationComm
     @Override
     protected String getMessageKey() {
         return "comment.notification";
+        // return "comment.new";
     }
 
     @Override
     protected Object[] getMessageArgs(NotificationCommentEvent event, UserDto user) {
-        return new Object[]{user.getUsername(), event.getContent(), event.getPostId()};
+        return new Object[] {user.getUsername(), event.getContent()};
     }
 
     @Override
-    protected Long getAuthorId(NotificationCommentEvent event) {
+    protected Long getRecieverId(NotificationCommentEvent event) {
+        return event.getPostAuthorId();
+    }
+
+    @Override
+    protected Long getSenderId(NotificationCommentEvent event) {
         return event.getAuthorId();
     }
 
-    @KafkaListener(topics = "${spring.kafka.topics.comment-topic.name}", groupId = "${spring.kafka.consumer.group-id}")
-    public void onMessage(String jsonEvent) {
+    @KafkaListener(topics = "${spring.kafka.topics.notifications-comment-topic.name}", groupId = "${spring.kafka.consumer.group-id}")
+    public void onMessage(String event) {
         try {
-            NotificationCommentEvent event = objectMapper.readValue(jsonEvent, NotificationCommentEvent.class);
+            NotificationCommentEvent commentEvent = objectMapper.readValue(event, NotificationCommentEvent.class);
             log.info("Parsed event: {}", event);
-            processEvent(event);
-        } catch (IOException e) {
-            log.error("Error parsing JSON", e);
+            processEvent(commentEvent);
+        } catch (JsonProcessingException e) {
+            log.error("Error parsing JSON: {}", event);
+            throw new RuntimeException(e);
         }
     }
 }

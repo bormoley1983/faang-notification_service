@@ -1,5 +1,6 @@
 package faang.school.notificationservice.listener;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import faang.school.notificationservice.model.event.NotificationLikeEvent;
 import faang.school.notificationservice.client.UserServiceClient;
@@ -10,7 +11,6 @@ import org.springframework.context.MessageSource;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.List;
 
 @Slf4j
@@ -32,22 +32,27 @@ public class LikeEventListener extends AbstractEventListener<NotificationLikeEve
 
     @Override
     protected Object[] getMessageArgs(NotificationLikeEvent event, UserDto user) {
-        return new Object[]{user.getUsername(), event.getPostId()};
+        return new Object[] {event.getUserId(), event.getPostId()};
     }
 
     @Override
-    protected Long getAuthorId(NotificationLikeEvent event) {
+    protected Long getRecieverId(NotificationLikeEvent event) {
         return event.getAuthorId();
     }
 
+    @Override
+    protected Long getSenderId(NotificationLikeEvent event) {
+        return event.getUserId();
+    }
+
     @KafkaListener(topics = "${spring.kafka.topics.like-topic.name}", groupId = "${spring.kafka.consumer.group-id}")
-    public void onMessage(String jsonEvent) {
+    public void onMessage(String event) {
         try {
-            NotificationLikeEvent event = objectMapper.readValue(jsonEvent, NotificationLikeEvent.class);
+            NotificationLikeEvent likeEvent = objectMapper.readValue(event, NotificationLikeEvent.class);
             log.info("Parsed event: {}", event);
-            processEvent(event);
-        } catch (IOException e) {
-            log.error("Error parsing JSON", e);
-        }
+            processEvent(likeEvent);
+        } catch (JsonProcessingException e) {
+            log.error("Error parsing JSON: {}", event);
+            throw new RuntimeException(e);        }
     }
 }
