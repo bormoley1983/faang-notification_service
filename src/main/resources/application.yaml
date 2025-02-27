@@ -1,13 +1,4 @@
 spring:
-  kafka:
-    bootstrap-servers: localhost:9092
-    consumer:
-      group-id: notifications-group
-    topics:
-      like-topic:
-        name: notifications_like_topic
-      notifications-comment-topic:
-        name: notifications_comment_topic
 
   data:
     redis:
@@ -31,6 +22,24 @@ spring:
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
+
+  messages:
+    basename: messages
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: notification-group
+    topics:
+      comment-topic:
+        name: notification_comment_topic
+      like-topic:
+        name: notification_like_topic
+
+telegram:
+  bot:
+    username: "@CorporationX_notifi_bot"
+    token: 8030864811:AAFn1YvQCO7ZoFVhfGPNgYT5JMPgpYFzrgQ
 
   messages:
     basename: messages
