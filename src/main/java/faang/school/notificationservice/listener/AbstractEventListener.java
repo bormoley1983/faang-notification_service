@@ -1,8 +1,8 @@
 package faang.school.notificationservice.listener;
 
-import faang.school.notificationservice.model.event.Event;
 import faang.school.notificationservice.client.UserServiceClient;
 import faang.school.notificationservice.model.dto.UserDto;
+import faang.school.notificationservice.model.event.Event;
 import faang.school.notificationservice.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
