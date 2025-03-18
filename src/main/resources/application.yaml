@@ -35,6 +35,8 @@ spring:
         name: notification_comment_topic
       like-topic:
         name: notification_like_topic
+      event-start-topic:
+        name: event_start_topic
 
 telegram:
   bot:

@@ -11,7 +11,6 @@ import org.springframework.context.MessageSource;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.List;
 
 @Slf4j

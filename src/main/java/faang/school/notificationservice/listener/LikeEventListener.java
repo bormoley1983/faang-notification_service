@@ -2,9 +2,9 @@ package faang.school.notificationservice.listener;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import faang.school.notificationservice.model.event.NotificationLikeEvent;
 import faang.school.notificationservice.client.UserServiceClient;
 import faang.school.notificationservice.model.dto.UserDto;
+import faang.school.notificationservice.model.event.NotificationLikeEvent;
 import faang.school.notificationservice.service.NotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
