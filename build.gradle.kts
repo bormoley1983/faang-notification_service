@@ -8,7 +8,7 @@ group = "faang.school"
 version = "1.0"
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
@@ -27,22 +27,14 @@ dependencies {
     /**
      * Spring boot starters
      */
-    // implementation("org.springframework.boot:spring-boot-starter-data-jdbc")
-    // implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation("org.springframework.kafka:spring-kafka")
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
-    
-    // /**
-    //  * Database
-    //  */
-    // implementation("org.liquibase:liquibase-core")
-    // implementation("redis.clients:jedis")
-    // runtimeOnly("org.postgresql:postgresql")
 
     /**
      * Utils & Logging
@@ -54,9 +46,6 @@ dependencies {
     annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
 
     implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
-
-    // implementation("org.slf4j:slf4j-api:2.0.5")
-    // annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
 
     /**
      * Vonage
@@ -75,7 +64,6 @@ dependencies {
     testImplementation("org.springframework.kafka:spring-kafka-test")
 
     testImplementation("org.testcontainers:junit-jupiter:1.21.4")
-    // testImplementation("org.testcontainers:postgresql:1.21.4")
     testImplementation("org.testcontainers:kafka:1.21.4")
 
     testImplementation("org.assertj:assertj-core:3.27.7")
