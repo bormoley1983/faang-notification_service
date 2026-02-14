@@ -2,17 +2,17 @@ spring:
 
   data:
     redis:
-      port: 6379
-      host: localhost
+      host: ${REDIS_URL:host.docker.internal}
+      port: ${REDIS_PORT:6379}
       channel:
-        follower: follower_channel
-        achievement: achievement_channel
+        follower: ${REDIS_FOLLOWER_CHANEL:follower_channel}
+        achievement: ${REDIS_ACHEIVEMENT_CHANEL:achievement_channel}
 
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: your_email@gmail.com #https://www.baeldung.com/spring-email
-    password: whatever #генерируем для своего Google аккаунта по инструкции https://support.google.com/accounts/answer/185833
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:your_email@gmail.com} #https://www.baeldung.com/spring-email
+    password: ${SMTP_PASSWORD:whatever} # https://support.google.com/accounts/answer/185833
     properties:
       mail:
         smtp:
@@ -27,42 +27,43 @@ spring:
     basename: messages
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
     consumer:
-      group-id: notification-group
+      group-id:  ${KAFKA_NOTIFICATIONS_GROUP_ID:notification-group}
     topics:
       comment-topic:
-        name: notification_comment_topic
+        name: ${KAFKA_ANALYTICS_COMMENT_TOPIC:analytics_comment_topic}
       like-topic:
-        name: notification_like_topic
+        name: ${KAFKA_ANALYTICS_LIKE_TOPIC:analytics-like-events}
       event-start-topic:
-        name: event_start_topic
+        name: ${KAFKA_EVENT_START_TOPIC:event_start_topic}
 
 telegram:
   bot:
-    username: "@CorporationX_notifi_bot"
-    token: 8030864811:AAFn1YvQCO7ZoFVhfGPNgYT5JMPgpYFzrgQ
+    username: ${TELEGRAM_BOT_NAME:"@CorporationX_notifi_bot"}
+    token:  ${TELEGRAM_BOT_TOKEN:8030864811:AAFn1YvQCO7ZoFVhfGPNgYT5JMPgpYFzrgQ}
 
   messages:
     basename: messages
 
 server:
-  port: 8083
+  port: ${NOTIFICATION_SERVICE_PORT:8083}
 
 logging:
   level:
     root: info
+    liquibase: info
+    org.testcontainers: info
 
-#Можно зарегистрировать аккаунт без привязки карты. Будет 2 евро на отправку тестовых SMS
 vonage: #https://dashboard.nexmo.com/getting-started/sms
   api:
-    key: ea3cbdef
-    secret: t6qqwTma9etW5JwR
-    from: Vonage Api
+    key: ${VONAGE_API_KEY:ea3cbdef}
+    secret: ${VONAGE_API_SECRET:t6qqwTma9etW5JwR}
+    from: ${VONAGE_API_SENDER:Vonage Api}
 
 project-service:
-    host: localhost
-    port: 8082
+  host: ${PROJECT_SERVICE_HOST:http://localhost}
+  port: ${PROJECT_SERVICE_PORT:8082}
 user-service:
-    host: localhost
-    port: 8080
+  host: ${USER_SERVICE_HOST:http://localhost}
+  port: ${USER_SERVICE_PORT:8080}  
