@@ -7,7 +7,7 @@ import com.vonage.client.sms.SmsSubmissionResponse;
 import com.vonage.client.sms.SmsSubmissionResponseMessage;
 import com.vonage.client.sms.messages.TextMessage;
 import faang.school.notificationservice.config.sms.VonageConfig;
-import faang.school.notificationservice.exception.sms.SmsSendingException;
+import faang.school.notificationservice.exception.NotificationDeliveryException;
 import faang.school.notificationservice.model.dto.UserDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +47,7 @@ public class SmsServiceTest {
     @BeforeEach
     void setup() {
         userDto = new UserDto();
+        userDto.setId(42L);
         userDto.setPhone("1234567890");
         message = "Hello!";
         when(config.getFrom()).thenReturn("faang");
@@ -67,10 +68,10 @@ public class SmsServiceTest {
     void sendTest_ShouldThrowExceptionWhenSmsDoesNotSend() {
         when(successMessage.getStatus()).thenReturn(MessageStatus.INTERNAL_ERROR);
 
-        SmsSendingException exception = assertThrows(SmsSendingException.class,
+        NotificationDeliveryException exception = assertThrows(NotificationDeliveryException.class,
                 () -> smsService.send(userDto, message));
 
-        assertEquals("Failed to send message to 1234567890", exception.getMessage());
+        assertEquals("SMS delivery failed for user id 42", exception.getMessage());
         verify(smsClient).submitMessage(any(TextMessage.class));
     }
 }

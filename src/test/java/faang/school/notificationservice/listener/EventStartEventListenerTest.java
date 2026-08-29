@@ -21,6 +21,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -66,7 +67,19 @@ public class EventStartEventListenerTest {
                         "Event is starting");
 
         when(objectMapper.readValue(jsonEvent, NotificationEventStartEvent.class)).thenReturn(event);
-        when(userServiceClient.getUser(any(Long.class))).thenReturn(mockUser);
+
+        // NOT-06: recipients are fetched in one bulk call; sender (ownerId = 2) is filtered out.
+        UserDto recipient3 = new UserDto();
+        recipient3.setId(3L);
+        recipient3.setUsername("user3");
+        recipient3.setPreference(PreferredContact.EMAIL);
+        UserDto recipient4 = new UserDto();
+        recipient4.setId(4L);
+        recipient4.setUsername("user4");
+        recipient4.setPreference(PreferredContact.EMAIL);
+        when(userServiceClient.getUsersByIds(anyList())).thenReturn(List.of(recipient3, recipient4));
+
+        // Message is resolved once per event (NOT-09: default locale).
         when(messageSource.getMessage(anyString(), any(Object[].class), any())).thenReturn("Event is starting");
 
         NotificationService mockNotificationService = mock(NotificationService.class);
@@ -78,8 +91,8 @@ public class EventStartEventListenerTest {
 
         eventStartEventListener.listenEvent(jsonEvent);
 
-        verify(userServiceClient, times(4)).getUser(any(Long.class));
-        verify(messageSource, times(2)).getMessage(anyString(), any(Object[].class), any());
+        verify(userServiceClient, times(1)).getUsersByIds(anyList());
+        verify(messageSource, times(1)).getMessage(anyString(), any(Object[].class), any());
         verify(mockNotificationService, times(2)).send(any(UserDto.class), anyString());
     }
 }

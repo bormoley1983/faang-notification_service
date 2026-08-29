@@ -1,18 +1,9 @@
 spring:
-
-  data:
-    redis:
-      host: ${REDIS_URL:host.docker.internal}
-      port: ${REDIS_PORT:6379}
-      channel:
-        follower: ${REDIS_FOLLOWER_CHANEL:follower_channel}
-        achievement: ${REDIS_ACHEIVEMENT_CHANEL:achievement_channel}
-
   mail:
     host: ${SMTP_HOST:smtp.gmail.com}
     port: ${SMTP_PORT:587}
-    username: ${SMTP_USERNAME:your_email@gmail.com} #https://www.baeldung.com/spring-email
-    password: ${SMTP_PASSWORD:whatever} # https://support.google.com/accounts/answer/185833
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
     properties:
       mail:
         smtp:
@@ -32,16 +23,16 @@ spring:
       group-id:  ${KAFKA_NOTIFICATIONS_GROUP_ID:notification-group}
     topics:
       comment-topic:
-        name: ${KAFKA_ANALYTICS_COMMENT_TOPIC:analytics_comment_topic}
+        name: ${KAFKA_NOTIFICATION_COMMENT_TOPIC:notification_comment_topic}
       like-topic:
-        name: ${KAFKA_ANALYTICS_LIKE_TOPIC:analytics-like-events}
+        name: ${KAFKA_NOTIFICATION_LIKE_TOPIC:notification_like_topic}
       event-start-topic:
         name: ${KAFKA_EVENT_START_TOPIC:event_start_topic}
 
 telegram:
   bot:
-    username: ${TELEGRAM_BOT_NAME:"@CorporationX_notifi_bot"}
-    token:  ${TELEGRAM_BOT_TOKEN:8030864811:AAFn1YvQCO7ZoFVhfGPNgYT5JMPgpYFzrgQ}
+    username: ${TELEGRAM_BOT_NAME:@CorporationX_notifi_bot}
+    token: ${TELEGRAM_BOT_TOKEN:}
 
   messages:
     basename: messages
@@ -57,13 +48,10 @@ logging:
 
 vonage: #https://dashboard.nexmo.com/getting-started/sms
   api:
-    key: ${VONAGE_API_KEY:ea3cbdef}
-    secret: ${VONAGE_API_SECRET:t6qqwTma9etW5JwR}
+    key: ${VONAGE_API_KEY:}
+    secret: ${VONAGE_API_SECRET:}
     from: ${VONAGE_API_SENDER:Vonage Api}
 
-project-service:
-  host: ${PROJECT_SERVICE_HOST:http://localhost}
-  port: ${PROJECT_SERVICE_PORT:8082}
 user-service:
   host: ${USER_SERVICE_HOST:http://localhost}
   port: ${USER_SERVICE_PORT:8080}  

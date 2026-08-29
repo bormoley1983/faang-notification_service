@@ -49,10 +49,11 @@ public class CommentEventListener extends AbstractEventListener<NotificationComm
     public void onMessage(String event) {
         try {
             NotificationCommentEvent commentEvent = objectMapper.readValue(event, NotificationCommentEvent.class);
-            log.info("Parsed event: {}", event);
+            log.info("Parsed comment notification for postId = {}, commentId = {}",
+                    commentEvent.getPostId(), commentEvent.getCommentId());
             processEvent(commentEvent);
         } catch (JsonProcessingException e) {
-            log.error("Error parsing JSON: {}", event);
+            log.error("Error parsing comment notification payload, length = {}", event.length(), e);
             throw new RuntimeException(e);
         }
     }

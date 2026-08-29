@@ -5,6 +5,7 @@ import com.vonage.client.sms.MessageStatus;
 import com.vonage.client.sms.SmsSubmissionResponse;
 import com.vonage.client.sms.messages.TextMessage;
 import faang.school.notificationservice.config.sms.VonageConfig;
+import faang.school.notificationservice.exception.NotificationDeliveryException;
 import faang.school.notificationservice.exception.sms.SmsSendingException;
 import faang.school.notificationservice.model.dto.UserDto;
 import faang.school.notificationservice.model.enums.PreferredContact;
@@ -34,11 +35,13 @@ public class SmsService implements NotificationService {
         SmsSubmissionResponse response = vonageClient.getSmsClient().submitMessage(sms);
 
         if (response.getMessages().get(0).getStatus() != MessageStatus.OK) {
-            log.error("Failed to send message to {}", phone);
-            throw new SmsSendingException("Failed to send message to " + phone);
+            log.error("Failed to send SMS notification to user with id = {}", user.getId());
+            throw new NotificationDeliveryException(
+                    "SMS delivery failed for user id " + user.getId(),
+                    new SmsSendingException("Vonage reported a non-OK status"));
         }
 
-        log.info("Message sent successfully to {}", phone);
+        log.info("Message sent successfully to user with id = {} via SMS", user.getId());
     }
 
     @Override

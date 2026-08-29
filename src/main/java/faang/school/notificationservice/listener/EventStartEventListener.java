@@ -32,25 +32,18 @@ public class EventStartEventListener extends AbstractEventListener<NotificationE
             log.info("Received event start notification for eventId: {} with {} participants",
                     event.getEventId(), event.getUserIds().size());
 
-            event.getUserIds().forEach(userId -> {
-                NotificationEventStartEvent eventStartEvent = new NotificationEventStartEvent();
-                eventStartEvent.setEventId(event.getEventId());
-                eventStartEvent.setOwnerId(event.getOwnerId());
-                eventStartEvent.setUserIds(List.of(userId));
-                eventStartEvent.setStartTime(event.getStartTime());
-                eventStartEvent.setMessage(event.getMessage());
-
-                processEvent(eventStartEvent);
-            });
+            // NOT-06: process the whole fan-out in one pass so users are fetched in a
+            // single bulk call and each recipient failure is isolated.
+            processEvent(event);
         } catch (JsonProcessingException e) {
-            log.error("Error parsing JSON: {}", jsonEvent);
+            log.error("Error parsing event start notification payload, length = {}", jsonEvent.length(), e);
             throw new RuntimeException(e);
         }
     }
 
     @Override
     protected String getMessageKey() {
-        return "StartEvent.notification";
+        return "event.start.notification";
     }
 
     @Override
@@ -62,6 +55,12 @@ public class EventStartEventListener extends AbstractEventListener<NotificationE
     @Override
     protected Long getRecieverId(NotificationEventStartEvent event) {
         return event.getUserIds().get(0);
+    }
+
+    @Override
+    protected List<Long> getRecipientIds(NotificationEventStartEvent event) {
+        // NOT-06: fan out to all participants in one bulk user fetch.
+        return event.getUserIds();
     }
 
     @Override

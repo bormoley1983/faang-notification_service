@@ -49,10 +49,10 @@ public class LikeEventListener extends AbstractEventListener<NotificationLikeEve
     public void onMessage(String event) {
         try {
             NotificationLikeEvent likeEvent = objectMapper.readValue(event, NotificationLikeEvent.class);
-            log.info("Parsed event: {}", event);
+            log.info("Parsed like notification for postId = {}", likeEvent.getPostId());
             processEvent(likeEvent);
         } catch (JsonProcessingException e) {
-            log.error("Error parsing JSON: {}", event);
+            log.error("Error parsing like notification payload, length = {}", event.length(), e);
             throw new RuntimeException(e);
         }
     }

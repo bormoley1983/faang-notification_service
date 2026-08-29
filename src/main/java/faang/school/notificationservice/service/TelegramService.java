@@ -1,6 +1,7 @@
 package faang.school.notificationservice.service;
 
 import faang.school.notificationservice.bot.TelegramBot;
+import faang.school.notificationservice.exception.NotificationDeliveryException;
 import faang.school.notificationservice.model.dto.UserDto;
 import faang.school.notificationservice.model.enums.PreferredContact;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +25,9 @@ public class TelegramService implements NotificationService {
         try {
             telegramBot.execute(sendMessage);
         } catch (TelegramApiException e) {
-            log.error("TelegramApiException was occurred while send message to user with " +
-                    "telegramChatId = {}, userName = {}", user.getTelegramChatId(), user.getTelegramUsername(), e);
+            log.error("Failed to send Telegram message to user with id = {}", user.getId(), e);
+            throw new NotificationDeliveryException(
+                    "Telegram delivery failed for user id " + user.getId(), e);
         }
     }
 

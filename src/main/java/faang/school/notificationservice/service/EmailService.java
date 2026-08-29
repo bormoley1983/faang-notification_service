@@ -1,5 +1,6 @@
 package faang.school.notificationservice.service;
 
+import faang.school.notificationservice.exception.NotificationDeliveryException;
 import faang.school.notificationservice.model.dto.UserDto;
 import faang.school.notificationservice.model.enums.PreferredContact;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +26,14 @@ public class EmailService implements NotificationService {
         msg.setTo(recieverEmail);
         msg.setSubject("New notification");
         msg.setText(message);
-        emailSender.send(msg);
-        log.info("Notification to mail: {}. With content {}. Was sent", user.getEmail(), message);
+        try {
+            emailSender.send(msg);
+        } catch (RuntimeException e) {
+            log.error("Failed to send email notification to user with id = {}", user.getId(), e);
+            throw new NotificationDeliveryException(
+                    "Email delivery failed for user id " + user.getId(), e);
+        }
+        log.info("Notification was sent to user with id = {} via EMAIL", user.getId());
     }
 
     @Override

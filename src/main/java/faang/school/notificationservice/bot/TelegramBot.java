@@ -1,6 +1,7 @@
 package faang.school.notificationservice.bot;
 
 import faang.school.notificationservice.client.UserServiceClient;
+import faang.school.notificationservice.service.TelegramBindingCodeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +26,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private String botToken;
 
     private final UserServiceClient userServiceClient;
+    private final TelegramBindingCodeService bindingCodeService;
 
     @Override
     public String getBotUsername() {
@@ -38,19 +40,40 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasMessage()) {
-            Message updateMessage = update.getMessage();
-            Chat chat = updateMessage.getChat();
-            if (chat.isGroupChat()) {
-                log.warn("Attempt to use bot from group chat, chat id = {}", chat.getId());
-                sendGroupChatWarning(updateMessage.getChatId().toString());
-            }
-            sendHelloMessage(updateMessage.getChatId().toString());
-            User messageFrom = updateMessage.getFrom();
-            String telegramChatId = updateMessage.getChatId().toString();
-            String telegramUsername = messageFrom.getUserName();
-            userServiceClient.updateTelegramUserId(telegramUsername, telegramChatId);
+        if (!update.hasMessage()) {
+            return;
         }
+        Message updateMessage = update.getMessage();
+        Chat chat = updateMessage.getChat();
+
+        // NOT-05: group/supergroup/channel chats are rejected immediately - no greeting, no binding.
+        String chatType = chat.getType();
+        if (chat.isGroupChat() || "supergroup".equals(chatType) || "channel".equals(chatType)) {
+            log.warn("Attempt to use bot from group/channel chat, chat id = {}", chat.getId());
+            sendGroupChatWarning(updateMessage.getChatId().toString());
+            return;
+        }
+
+        User messageFrom = updateMessage.getFrom();
+        if (messageFrom == null) {
+            return;
+        }
+
+        String text = updateMessage.getText();
+        // NOT-04: binding requires a valid single-use code issued by the authenticated
+        // application for this specific user. Free-form username/chat pairs are rejected.
+        Long boundUserId = bindingCodeService.consumeCode(text);
+        if (boundUserId == null) {
+            log.info("Telegram message without a valid binding code from chat id = {}",
+                    updateMessage.getChatId());
+            sendInvalidCodeMessage(updateMessage.getChatId().toString());
+            return;
+        }
+
+        String telegramChatId = updateMessage.getChatId().toString();
+        userServiceClient.bindTelegramChat(boundUserId, telegramChatId);
+        log.info("Bound Telegram chat for user id = {}", boundUserId);
+        sendHelloMessage(telegramChatId);
     }
 
     private void sendHelloMessage(String chatId) {
@@ -71,6 +94,18 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("TelegramApiException was occurred while send warn to group chat", e);
+            log.error("Failed to send group chat warning to chat id = {}", chatId, e);
         }
-    }}
+    }
+
+    private void sendInvalidCodeMessage(String chatId) {
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText("Invalid or expired binding code. Open the application and copy a fresh code.");
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Failed to send invalid-code message to chat id = {}", chatId, e);
+        }
+    }
+}
