@@ -4,7 +4,7 @@ Service responsible for managing notifications, event processing, and message de
 ## Quick start
 
 Prerequisites:
-- Java 21+ (JDK)
+- Java 25+ (JDK)
 - Docker (for container runs)
 - [faang-infra services](https://github.com/bormoley1983/faang-infra) running locally or accessible
 

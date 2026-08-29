@@ -2,22 +2,50 @@ name: CI
 
 on:
   pull_request:
-    branches:
-      - hippogriff-master-stream8
+    branches: [dev-local]
+  push:
+    branches: [dev-local]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v2
+      - name: Set up JDK 25
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
-          distribution: 'adopt'
-          java-version: '17'
+          distribution: temurin
+          java-version: '25'
 
-      - name: Run tests
-        run: ./gradlew test
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@4733eaac7c1b0da527e4206b7671e0061de1ce37 # v6
+        with:
+          validate-wrappers: true
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+
+      - name: Build and test
+        run: ./gradlew clean build --no-daemon --stacktrace
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ci-reports
+          if-no-files-found: ignore
+          retention-days: 14
+          path: |
+            build/test-results/test/**
+            build/reports/tests/test/**
+            build/reports/jacoco/**
