@@ -33,7 +33,9 @@ public class CommentEventListener extends AbstractEventListener<NotificationComm
 
     @Override
     protected Object[] getMessageArgs(NotificationCommentEvent event, UserDto user) {
-        return new Object[] {user.getUsername(), event.getContent()};
+        // NOT-09: the message is resolved once per event with a null user, so the
+        // username argument must not dereference the (absent) recipient.
+        return new Object[] {user == null ? "" : user.getUsername(), event.getContent()};
     }
 
     @Override

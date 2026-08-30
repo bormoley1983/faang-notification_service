@@ -3,6 +3,7 @@ package faang.school.notificationservice.listener;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import faang.school.notificationservice.client.UserServiceClient;
+import faang.school.notificationservice.exception.EventDeserializationException;
 import faang.school.notificationservice.model.dto.UserDto;
 import faang.school.notificationservice.model.enums.PreferredContact;
 import faang.school.notificationservice.model.event.NotificationEventStartEvent;
@@ -10,20 +11,20 @@ import faang.school.notificationservice.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
 
-import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,25 +36,24 @@ public class EventStartEventListenerTest {
     private UserServiceClient userServiceClient;
 
     @Mock
-    private List<NotificationService> notificationServices;
-
-    @Mock
     private MessageSource messageSource;
 
     @Mock
     private ObjectMapper objectMapper;
 
-    @InjectMocks
-    private EventStartEventListener eventStartEventListener;
+    @Mock
+    private NotificationService emailService;
 
-    private UserDto mockUser;
+    private EventStartEventListener eventStartEventListener;
 
     @BeforeEach
     public void setUp() {
-        mockUser = new UserDto();
-        mockUser.setId(1L);
-        mockUser.setUsername("testuser");
-        mockUser.setPreference(PreferredContact.EMAIL);
+        // Manual construction: @InjectMocks cannot inject a single mock into the
+        // List<NotificationService> constructor parameter. Lenient because tests that
+        // never reach strategy selection (malformed payload, no recipients) don't use it.
+        lenient().when(emailService.getPreferredContact()).thenReturn(PreferredContact.EMAIL);
+        eventStartEventListener = new EventStartEventListener(
+                userServiceClient, List.of(emailService), messageSource, objectMapper);
     }
 
     @Test
@@ -82,17 +82,93 @@ public class EventStartEventListenerTest {
         // Message is resolved once per event (NOT-09: default locale).
         when(messageSource.getMessage(anyString(), any(Object[].class), any())).thenReturn("Event is starting");
 
-        NotificationService mockNotificationService = mock(NotificationService.class);
-        when(mockNotificationService.getPreferredContact()).thenReturn(PreferredContact.EMAIL);
-        List<NotificationService> mockNotificationServices = List.of(mockNotificationService);
-        Field notificationServicesField = AbstractEventListener.class.getDeclaredField("notificationServices");
-        notificationServicesField.setAccessible(true);
-        notificationServicesField.set(eventStartEventListener, mockNotificationServices);
-
         eventStartEventListener.listenEvent(jsonEvent);
 
         verify(userServiceClient, times(1)).getUsersByIds(anyList());
         verify(messageSource, times(1)).getMessage(anyString(), any(Object[].class), any());
-        verify(mockNotificationService, times(2)).send(any(UserDto.class), anyString());
+        verify(emailService, times(2)).send(any(UserDto.class), anyString());
+    }
+
+    @Test
+    public void testListenEvent_whenPayloadMalformed_throwsDeserializationException() throws JsonProcessingException {
+        // Arrange: NOT-08 — raw payload is not leaked; typed exception propagates to Kafka retry/DLQ
+        when(objectMapper.readValue("{not json", NotificationEventStartEvent.class))
+                .thenThrow(new JsonProcessingException("bad") {});
+
+        // Act / Assert
+        assertThatThrownBy(() -> eventStartEventListener.listenEvent("{not json"))
+                .isInstanceOf(EventDeserializationException.class)
+                .hasMessage("Failed to deserialize NotificationEventStartEvent");
+        verify(userServiceClient, times(0)).getUsersByIds(anyList());
+    }
+
+    @Test
+    public void testListenEvent_whenOnlyOwnerIsParticipant_noNotificationSent() throws JsonProcessingException {
+        // Arrange: sender (ownerId) is filtered out → no recipients remain
+        String jsonEvent =
+                "{\"eventId\":1,\"ownerId\":2,\"userIds\":[2],\"startTime\":\"2023-10-10T10:00:00\""
+                        + ",\"message\":\"Event is starting\"}";
+        NotificationEventStartEvent event =
+                new NotificationEventStartEvent(1L, 2L, List.of(2L),
+                        LocalDateTime.parse("2023-10-10T10:00:00", DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                        "Event is starting");
+        when(objectMapper.readValue(jsonEvent, NotificationEventStartEvent.class)).thenReturn(event);
+
+        // Act / Assert: no bulk user fetch and no message resolution happen
+        eventStartEventListener.listenEvent(jsonEvent);
+
+        verify(userServiceClient, times(0)).getUsersByIds(anyList());
+        verify(emailService, times(0)).send(any(UserDto.class), anyString());
+    }
+
+    @Test
+    public void testListenEvent_whenRecipientMissingFromBulkFetch_isSkipped() throws JsonProcessingException {
+        // Arrange: bulk fetch returns only one of the two recipients → missing one is skipped (NOT-06)
+        String jsonEvent =
+                "{\"eventId\":1,\"ownerId\":2,\"userIds\":[3,4],\"startTime\":\"2023-10-10T10:00:00\""
+                        + ",\"message\":\"Event is starting\"}";
+        NotificationEventStartEvent event =
+                new NotificationEventStartEvent(1L, 2L, List.of(3L, 4L),
+                        LocalDateTime.parse("2023-10-10T10:00:00", DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                        "Event is starting");
+        when(objectMapper.readValue(jsonEvent, NotificationEventStartEvent.class)).thenReturn(event);
+
+        UserDto recipient3 = new UserDto();
+        recipient3.setId(3L);
+        recipient3.setUsername("user3");
+        recipient3.setPreference(PreferredContact.EMAIL);
+        when(userServiceClient.getUsersByIds(anyList())).thenReturn(List.of(recipient3));
+        when(messageSource.getMessage(anyString(), any(Object[].class), any())).thenReturn("Event is starting");
+
+        // Act / Assert: only the resolvable recipient receives a notification
+        eventStartEventListener.listenEvent(jsonEvent);
+
+        verify(emailService, times(1)).send(recipient3, "Event is starting");
+    }
+
+    @Test
+    public void testListenEvent_whenDeliveryFails_failureIsIsolatedPerRecipient() throws JsonProcessingException {
+        // Arrange: a channel failure for one recipient must NOT propagate (NOT-06)
+        String jsonEvent =
+                "{\"eventId\":1,\"ownerId\":2,\"userIds\":[3],\"startTime\":\"2023-10-10T10:00:00\""
+                        + ",\"message\":\"Event is starting\"}";
+        NotificationEventStartEvent event =
+                new NotificationEventStartEvent(1L, 2L, List.of(3L),
+                        LocalDateTime.parse("2023-10-10T10:00:00", DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                        "Event is starting");
+        when(objectMapper.readValue(jsonEvent, NotificationEventStartEvent.class)).thenReturn(event);
+
+        UserDto recipient3 = new UserDto();
+        recipient3.setId(3L);
+        recipient3.setUsername("user3");
+        recipient3.setPreference(PreferredContact.EMAIL);
+        when(userServiceClient.getUsersByIds(anyList())).thenReturn(List.of(recipient3));
+        when(messageSource.getMessage(anyString(), any(Object[].class), any())).thenReturn("Event is starting");
+        org.mockito.Mockito.doThrow(new RuntimeException("Email delivery failed for user id 3"))
+                .when(emailService).send(any(UserDto.class), anyString());
+
+        // Act / Assert: the delivery exception is swallowed and logged, not rethrown
+        assertThatCode(() -> eventStartEventListener.listenEvent(jsonEvent)).doesNotThrowAnyException();
+        verify(emailService, times(1)).send(recipient3, "Event is starting");
     }
 }
