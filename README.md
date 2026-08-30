@@ -27,7 +27,6 @@ docker run -p 8083:8083 notification-service
 
 ## Configuration
 
-Main config: [src/main/resources/application.yaml](src/main/resources/application.yaml)  
-Test config: [src/test/resources/application-test.yaml](src/test/resources/application-test.yaml)
+Main config: [src/main/resources/application.yaml](src/main/resources/application.yaml)
 
 **Note:** Base code structure and architecture patterns are based on [FAANG School](https://github.com/faang-school) educational project.
