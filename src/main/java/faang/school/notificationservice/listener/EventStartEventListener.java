@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import faang.school.notificationservice.client.UserServiceClient;
 import faang.school.notificationservice.model.dto.UserDto;
+import faang.school.notificationservice.exception.EventDeserializationException;
 import faang.school.notificationservice.model.event.NotificationEventStartEvent;
 import faang.school.notificationservice.service.NotificationService;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +38,7 @@ public class EventStartEventListener extends AbstractEventListener<NotificationE
             processEvent(event);
         } catch (JsonProcessingException e) {
             log.error("Error parsing event start notification payload, length = {}", jsonEvent.length(), e);
-            throw new RuntimeException(e);
+            throw new EventDeserializationException("Failed to deserialize NotificationEventStartEvent", e);
         }
     }
 

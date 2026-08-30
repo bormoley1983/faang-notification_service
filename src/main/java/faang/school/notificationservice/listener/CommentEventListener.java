@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import faang.school.notificationservice.client.UserServiceClient;
 import faang.school.notificationservice.model.dto.UserDto;
+import faang.school.notificationservice.exception.EventDeserializationException;
 import faang.school.notificationservice.model.event.NotificationCommentEvent;
 import faang.school.notificationservice.service.NotificationService;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +55,7 @@ public class CommentEventListener extends AbstractEventListener<NotificationComm
             processEvent(commentEvent);
         } catch (JsonProcessingException e) {
             log.error("Error parsing comment notification payload, length = {}", event.length(), e);
-            throw new RuntimeException(e);
+            throw new EventDeserializationException("Failed to deserialize NotificationCommentEvent", e);
         }
     }
 }
