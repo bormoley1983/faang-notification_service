@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@FeignClient(name = "user-service", url = "${user-service.host}:${user-service.port}")
+@FeignClient(name = "user-service", url = "http://${user-service.host}:${user-service.port}")
 public interface UserServiceClient {
 
     @GetMapping("/api/v1/users/{id}")

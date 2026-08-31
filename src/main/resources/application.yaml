@@ -53,5 +53,5 @@ vonage: #https://dashboard.nexmo.com/getting-started/sms
     from: ${VONAGE_API_SENDER:Vonage Api}
 
 user-service:
-  host: ${USER_SERVICE_HOST:http://localhost}
+  host: ${USER_SERVICE_HOST:localhost}
   port: ${USER_SERVICE_PORT:8080}  
