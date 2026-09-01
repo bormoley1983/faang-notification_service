@@ -17,17 +17,10 @@ spring:
   messages:
     basename: messages
 
-notification:
-  channels:
-    email:
-      enabled: ${EMAIL_ENABLED:false}
-    sms:
-      enabled: ${SMS_ENABLED:false}
-
   kafka:
     bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
     consumer:
-      group-id:  ${KAFKA_NOTIFICATIONS_GROUP_ID:notification-group}
+      group-id: ${KAFKA_NOTIFICATIONS_GROUP_ID:notification-group}
     topics:
       comment-topic:
         name: ${KAFKA_NOTIFICATION_COMMENT_TOPIC:notification_comment_topic}
@@ -35,6 +28,13 @@ notification:
         name: ${KAFKA_NOTIFICATION_LIKE_TOPIC:notification_like_topic}
       event-start-topic:
         name: ${KAFKA_EVENT_START_TOPIC:event_start_topic}
+
+notification:
+  channels:
+    email:
+      enabled: ${EMAIL_ENABLED:false}
+    sms:
+      enabled: ${SMS_ENABLED:false}
 
 telegram:
   bot:
