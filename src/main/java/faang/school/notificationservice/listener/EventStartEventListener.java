@@ -49,8 +49,8 @@ public class EventStartEventListener extends AbstractEventListener<NotificationE
 
     @Override
     protected Object[] getMessageArgs(NotificationEventStartEvent event, UserDto user) {
-        // The message arguments would typically include information about the event
-        return new Object[]{event};
+        // the whole event POJO (whose Lombok toString() would dump every field into the body).
+        return new Object[]{event.getEventId()};
     }
 
     @Override

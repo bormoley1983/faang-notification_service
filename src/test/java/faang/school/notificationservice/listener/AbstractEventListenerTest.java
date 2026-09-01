@@ -303,15 +303,34 @@ class AbstractEventListenerTest {
     }
 
     @Test
-    void processEvent_whenBulkFetchFails_propagatesClientFailure() {
-        // Arrange: user service call fails (Feign error)
+    void processEvent_whenBulkFetchFails_wrapsInTypedRetryableException() {
+        // Arrange: user service call fails (Feign error) — Q N-2
         when(userServiceClient.getUsersByIds(anyList()))
                 .thenThrow(new RuntimeException("user-service unavailable"));
 
-        // Act / Assert: no per-recipient isolation for the fetch itself — it propagates
+        // Act / Assert: the bulk-fetch failure is wrapped in a typed retryable exception
+        // carrying diagnostic context (event type + recipient count), so Kafka retries/DLQs
+        // the record instead of failing with no context. No per-recipient send occurs.
         assertThatThrownBy(() -> listener.processEvent(event(1L, 5L)))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("user-service unavailable");
+                .isInstanceOf(NotificationDeliveryException.class)
+                .hasMessageContaining("NotificationCommentEvent")
+                .hasMessageContaining("recipientCount = 1")
+                .hasCauseInstanceOf(RuntimeException.class);
+        verify(emailService, never()).send(any(), any());
+        verify(smsService, never()).send(any(), any());
+    }
+
+    @Test
+    void processEvent_whenBulkFetchFails_reportsRecipientCountForFanOut() {
+        // Arrange: fan-out listener with two recipients; bulk fetch fails — Q N-2
+        FanOutListener fanOut = new FanOutListener(userServiceClient, List.of(emailService), messageSource);
+        when(userServiceClient.getUsersByIds(anyList()))
+                .thenThrow(new RuntimeException("user-service unavailable"));
+
+        // Act / Assert: diagnostic context reflects the full recipient count
+        assertThatThrownBy(() -> fanOut.processEvent(event(1L, 5L)))
+                .isInstanceOf(NotificationDeliveryException.class)
+                .hasMessageContaining("recipientCount = 2");
         verify(emailService, never()).send(any(), any());
     }
 

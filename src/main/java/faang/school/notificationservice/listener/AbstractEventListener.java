@@ -1,6 +1,7 @@
 package faang.school.notificationservice.listener;
 
 import faang.school.notificationservice.client.UserServiceClient;
+import faang.school.notificationservice.exception.NotificationDeliveryException;
 import faang.school.notificationservice.model.dto.UserDto;
 import faang.school.notificationservice.model.enums.PreferredContact;
 import faang.school.notificationservice.model.event.Event;
@@ -65,9 +66,20 @@ public abstract class AbstractEventListener<T extends Event> {
                     return dto;
                 })
                 .toList();
-        Map<Long, UserDto> usersById = userServiceClient.getUsersByIds(idOnlyUsers)
-                .stream()
-                .collect(Collectors.toMap(UserDto::getId, Function.identity(), (a, b) -> a));
+
+        Map<Long, UserDto> usersById;
+        try {
+            usersById = userServiceClient.getUsersByIds(idOnlyUsers)
+                    .stream()
+                    .collect(Collectors.toMap(UserDto::getId, Function.identity(), (a, b) -> a));
+        } catch (RuntimeException e) {
+            log.error("Failed to bulk-fetch recipients for event of type {}; recipientCount = {}",
+                    event.getClass().getSimpleName(), recipientIds.size(), e);
+            throw new NotificationDeliveryException(
+                    "Failed to fetch recipients for event of type "
+                            + event.getClass().getSimpleName()
+                            + ", recipientCount = " + recipientIds.size(), e);
+        }
 
         Locale locale = getMessageLocale(event);
         String message = messageSource.getMessage(getMessageKey(), getMessageArgs(event, null), locale);

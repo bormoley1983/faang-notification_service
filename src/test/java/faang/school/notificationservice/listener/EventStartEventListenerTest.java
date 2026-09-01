@@ -11,6 +11,7 @@ import faang.school.notificationservice.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
@@ -19,11 +20,13 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -170,5 +173,46 @@ public class EventStartEventListenerTest {
         // Act / Assert: the delivery exception is swallowed and logged, not rethrown
         assertThatCode(() -> eventStartEventListener.listenEvent(jsonEvent)).doesNotThrowAnyException();
         verify(emailService, times(1)).send(recipient3, "Event is starting");
+    }
+
+    @Test
+    public void testListenEvent_whenMessageResolved_argsAreScalarNotEventPojo() throws JsonProcessingException {
+        // Arrange: The message args must be explicit scalar values (the event id),
+        // not the whole NotificationEventStartEvent POJO whose Lombok toString() would dump
+        // every field into the notification body.
+        String jsonEvent =
+                "{\"eventId\":42,\"ownerId\":2,\"userIds\":[3],\"startTime\":\"2023-10-10T10:00:00\""
+                        + ",\"message\":\"Event is starting\"}";
+        NotificationEventStartEvent event =
+                new NotificationEventStartEvent(42L, 2L, List.of(3L),
+                        LocalDateTime.parse("2023-10-10T10:00:00", DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                        "Event is starting");
+        when(objectMapper.readValue(jsonEvent, NotificationEventStartEvent.class)).thenReturn(event);
+
+        UserDto recipient3 = new UserDto();
+        recipient3.setId(3L);
+        recipient3.setUsername("user3");
+        recipient3.setPreference(PreferredContact.EMAIL);
+        when(userServiceClient.getUsersByIds(anyList())).thenReturn(List.of(recipient3));
+        when(messageSource.getMessage(anyString(), any(Object[].class), any()))
+                .thenAnswer(invocation -> {
+                    Object[] args = invocation.getArgument(1);
+                    // Simulate MessageSource rendering: "Event {0} has started." with the scalar id.
+                    return "Event " + args[0] + " has started.";
+                });
+
+        // Act
+        eventStartEventListener.listenEvent(jsonEvent);
+
+        // Assert: the resolved message is a clean, readable sentence using the scalar id —
+        // no Lombok field dump appears in the body.
+        ArgumentCaptor<Object[]> argsCaptor = ArgumentCaptor.forClass(Object[].class);
+        verify(messageSource).getMessage(eq("event.start.notification"), argsCaptor.capture(), any());
+        Object[] args = argsCaptor.getValue();
+        assertThat(args).hasSize(1);
+        assertThat(args[0]).isEqualTo(42L);
+        assertThat(args[0]).isNotInstanceOf(NotificationEventStartEvent.class);
+
+        verify(emailService, times(1)).send(recipient3, "Event 42 has started.");
     }
 }
