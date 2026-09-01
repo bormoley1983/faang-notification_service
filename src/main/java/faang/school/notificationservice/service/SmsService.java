@@ -11,12 +11,14 @@ import faang.school.notificationservice.model.dto.UserDto;
 import faang.school.notificationservice.model.enums.PreferredContact;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import static faang.school.notificationservice.model.enums.PreferredContact.SMS;
 
 @Slf4j
 @Service
+@ConditionalOnProperty(prefix = "notification.channels.sms", name = "enabled", havingValue = "true")
 @RequiredArgsConstructor
 public class SmsService implements NotificationService {
     private final VonageConfig config;

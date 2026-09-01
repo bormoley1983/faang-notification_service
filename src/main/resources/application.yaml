@@ -17,6 +17,13 @@ spring:
   messages:
     basename: messages
 
+notification:
+  channels:
+    email:
+      enabled: ${EMAIL_ENABLED:false}
+    sms:
+      enabled: ${SMS_ENABLED:false}
+
   kafka:
     bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
     consumer:
@@ -31,6 +38,7 @@ spring:
 
 telegram:
   bot:
+    enabled: ${TELEGRAM_ENABLED:false}
     username: ${TELEGRAM_BOT_NAME:@CorporationX_notifi_bot}
     token: ${TELEGRAM_BOT_TOKEN:}
 

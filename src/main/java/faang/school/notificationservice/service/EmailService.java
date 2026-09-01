@@ -6,6 +6,7 @@ import faang.school.notificationservice.model.enums.PreferredContact;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,7 @@ import static faang.school.notificationservice.model.enums.PreferredContact.EMAI
 @Slf4j
 @RequiredArgsConstructor
 @Service
+@ConditionalOnProperty(prefix = "notification.channels.email", name = "enabled", havingValue = "true")
 public class EmailService implements NotificationService {
 
     private final JavaMailSender emailSender;
