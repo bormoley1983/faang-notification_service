@@ -64,6 +64,19 @@ class UserHeaderFilterTest {
     }
 
     @Test
+    void doFilter_whenActuatorRequestHasNoHeader_invokesChain() throws Exception {
+        MockHttpServletRequest request =
+                new MockHttpServletRequest("GET", "/actuator/health/readiness");
+
+        filter.doFilter(request, new MockHttpServletResponse(), chain);
+
+        verify(chain).doFilter(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any());
+        assertThat(userContext.getUserId()).isZero();
+    }
+
+    @Test
     void doFilter_whenChainFails_stillClearsContext() throws Exception {
         // Arrange: downstream handler throws
         org.mockito.Mockito.doThrow(new ServletException("boom"))
