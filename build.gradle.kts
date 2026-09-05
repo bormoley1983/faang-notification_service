@@ -8,6 +8,9 @@ plugins {
 group = "faang.school"
 version = "1.0"
 
+// Temporary CVE mitigation; remove after Spring Boot manages Tomcat 11.0.25+.
+extra["tomcat.version"] = "11.0.25"
+
 val javaVersion = 25
 val springCloudVersion = "2025.1.3"
 val testcontainersVersion = "2.0.5"
